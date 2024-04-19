@@ -1,10 +1,9 @@
 module shoe_store::store {
     use sui::object::{Self, UID, ID};
-    use sui::transfer;
-    use sui::tx_context::TxContext;
+    use sui::tx_context::{Self, TxContext};
+    use std::string::{String};
 
-    const EShoeNotFound: u64 = 0;
-    const EInsufficientStock: u64 = 1;
+    const EInsufficientStock: u64 = 0;
 
     struct Shoe has key, store {
         id: UID,
@@ -42,14 +41,8 @@ module shoe_store::store {
         store
     }
 
-    // Function to get a specific shoe by its ID
-    public fun get_shoe(store: &Shoe, shoe_id: ID): &Shoe {
-        let shoe = object::borrow<Shoe, ID>(shoe_id);
-        shoe
-    }
-
     // Function to delete a shoe from the store
-    public fun delete_shoe(shoe: Shoe, ctx: &mut TxContext) {
+    public fun delete_shoe(shoe: Shoe) {
         let Shoe { id, name: _, description: _, price: _, stock: _, color: _, size: _ } = shoe;
         object::delete(id);
     }
@@ -64,18 +57,13 @@ module shoe_store::store {
         assert!(shoe.stock >= quantity, EInsufficientStock);
         shoe.stock = shoe.stock - quantity;
         let total_cost = shoe.price * (quantity as u64);
-        ShoeOrder {
+        let order = ShoeOrder {
             id: object::new(ctx),
             shoeId: object::id(shoe),
             buyer: tx_context::sender(ctx),
             quantity,
-            totalCost,
-        }
-    }
-
-    // Function to get a shoe order by its ID
-    public fun get_shoe_order(order_id: ID): &ShoeOrder {
-        let order = object::borrow<ShoeOrder, ID>(order_id);
+            totalCost: total_cost,
+        };
         order
     }
 }
