@@ -1,19 +1,28 @@
-# Charity Donation Platform
+# Shoe Store Smart Contract
 
-A decentralized application (DApp) for facilitating charity donations.
+This smart contract defines the functionality for a shoe store on the Sui blockchain framework.
 
 ## Overview
 
-- The Charity Donation Platform allows users to create donation events, contribute funds, and track donation progress.
-- Donors can contribute to ongoing donation campaigns, and the platform ensures transparency and accountability.
-- At the end of each donation event, donors can verify the outcome, and the donated funds are allocated according to the campaign's goals.
+The Shoe Store smart contract allows users to manage a shoe store, including adding new shoes, updating stock, purchasing shoes, and retrieving shoe information.
 
 ## Features
 
-- **Create Donation Events:** Users can initiate new donation campaigns, setting goals and durations for fundraising.
-- **Contribute Funds:** Donors can contribute funds to ongoing donation events securely and transparently.
-- **Track Donation Progress:** The platform provides real-time tracking of donation progress, ensuring transparency and accountability.
-- **Verify Donations:** Donors can verify the outcome of donation events and ensure that funds are allocated according to the campaign's goals.
+- **Add Shoe:** Add a new shoe to the store with details such as name, description, price, stock, color, and size.
+- **Get Shoes:** Retrieve all shoes available in the store.
+- **Get Shoe:** Retrieve a specific shoe by its ID.
+- **Delete Shoe:** Remove a shoe from the store.
+- **Update Stock:** Update the stock of a shoe.
+- **Purchase Shoe:** Allow users to purchase a shoe from the store, updating the stock accordingly.
+- **Get Shoe Order:** Retrieve information about a shoe order by its ID.
+
+## Note
+
+- Ensure to handle errors such as shoe not found and insufficient stock.
+- Transactions such as adding, updating, and purchasing shoes require sufficient gas for execution.
+- Access control mechanisms can be implemented to restrict certain operations to authorized users only.
+- Consider implementing events to emit notifications for important actions like shoe purchases or stock updates.
+
 
 ## Dependency
 
@@ -47,7 +56,4 @@ Follow these steps to deploy and use the Charity Donation Platform:
 
 ## Note
 
-- The Charity Donation Platform leverages randomness from the drand service for certain operations, ensuring fairness and unpredictability.
-- The randomness is sourced from the drand quicknet chain, which generates verifiable random 32-byte outputs every 3 seconds. For more details, refer to the [drand documentation](https://drand.love/).
-- Re-running tests for a specific round may yield the same results if the inputs remain unchanged. However, altering the round or updating the signature will produce different outcomes.
-- Ensure that you update the signature when changing the round to maintain result integrity.
+- Logs (`2024-04-19T08_52_35_994Z-debug-0.log` and `2024-04-19T08_52_35_994Z-eresolve-report.txt`) may provide more specific information about the problem.
