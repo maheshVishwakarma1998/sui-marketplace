@@ -1,11 +1,13 @@
 module shoe_store::store {
-    use sui::object::{Self, UID, ID};
+    use sui::object::{Self, UID};
+    use sui::tx_context::{Self, TxContext};
+    use sui::kiosk::{Self, Kiosk, KioskOwnerCap};
+    use sui::transfer_policy::{Self as tp};
+    use sui::package::{Self, Publisher};
     use sui::transfer;
-    use sui::tx_context::TxContext;
 
-    const EShoeNotFound: u64 = 0;
-    const EInsufficientStock: u64 = 1;
-
+    use std::string::{String};
+    
     struct Shoe has key, store {
         id: UID,
         name: String,
@@ -15,17 +17,49 @@ module shoe_store::store {
         color: String,
         size: u64,
     }
+    /// Publisher capability object
+    struct ShoePublisher has key { id: UID, publisher: Publisher }
 
-    struct ShoeOrder has key, store {
+     // one time witness 
+    struct STORE has drop {}
+
+    // Only owner of this module can access it.
+    struct AdminCap has key {
         id: UID,
-        shoeId: ID,
-        buyer: address,
-        quantity: u64,
-        totalCost: u64,
     }
 
+    // =================== Initializer ===================
+    fun init(otw:STORE, ctx: &mut TxContext) {
+        // define the publisher
+        let publisher_ = package::claim<STORE>(otw, ctx);
+        // wrap the publisher and share.
+        transfer::share_object(ShoePublisher {
+            id: object::new(ctx),
+            publisher: publisher_
+        });
+        // transfer the admincap
+        transfer::transfer(AdminCap{id: object::new(ctx)}, tx_context::sender(ctx));
+    }
+
+    /// Users can create new kiosk for marketplace 
+    public fun new(ctx: &mut TxContext) : KioskOwnerCap {
+        let(kiosk, kiosk_cap) = kiosk::new(ctx);
+        // share the kiosk
+        transfer::public_share_object(kiosk);
+        kiosk_cap
+    }
+    // create any transferpolicy for rules 
+    public fun new_policy(publish: &ShoePublisher, ctx: &mut TxContext ) {
+        // set the publisher
+        let publisher = get_publisher(publish);
+        // create an transfer_policy and tp_cap
+        let (transfer_policy, tp_cap) = tp::new<Shoe>(publisher, ctx);
+        // transfer the objects 
+        transfer::public_transfer(tp_cap, tx_context::sender(ctx));
+        transfer::public_share_object(transfer_policy);
+    }
     // Function to add a new shoe to the store
-    public fun add_shoe(name: String, description: String, price: u64, stock: u64, color: String, size: u64, ctx: &mut TxContext): Shoe {
+    public fun new_shoe(name: String, description: String, price: u64, stock: u64, color: String, size: u64, ctx: &mut TxContext): Shoe {
         Shoe {
             id: object::new(ctx),
             name,
@@ -42,14 +76,8 @@ module shoe_store::store {
         store
     }
 
-    // Function to get a specific shoe by its ID
-    public fun get_shoe(store: &Shoe, shoe_id: ID): &Shoe {
-        let shoe = object::borrow<Shoe, ID>(shoe_id);
-        shoe
-    }
-
     // Function to delete a shoe from the store
-    public fun delete_shoe(shoe: Shoe, ctx: &mut TxContext) {
+    public fun delete_shoe(shoe: Shoe) {
         let Shoe { id, name: _, description: _, price: _, stock: _, color: _, size: _ } = shoe;
         object::delete(id);
     }
@@ -58,24 +86,29 @@ module shoe_store::store {
     public fun update_stock(shoe: &mut Shoe, new_stock: u64) {
         shoe.stock = new_stock;
     }
-
-    // Function to purchase a shoe and update stock
-    public fun purchase_shoe(shoe: &mut Shoe, quantity: u64, ctx: &mut TxContext): ShoeOrder {
-        assert!(shoe.stock >= quantity, EInsufficientStock);
-        shoe.stock = shoe.stock - quantity;
-        let total_cost = shoe.price * (quantity as u64);
-        ShoeOrder {
-            id: object::new(ctx),
-            shoeId: object::id(shoe),
-            buyer: tx_context::sender(ctx),
-            quantity,
-            totalCost,
-        }
+    public fun update_name(shoe: &mut Shoe, name_: String) {
+        shoe.name = name_;
+    }
+     public fun update_description(shoe: &mut Shoe, description: String) {
+        shoe.description = description;
+    }
+    public fun update_price(shoe: &mut Shoe, price: u64) {
+        shoe.price = price;
+    }
+    public fun update_color(shoe: &mut Shoe, color: String) {
+        shoe.color = color;
     }
 
-    // Function to get a shoe order by its ID
-    public fun get_shoe_order(order_id: ID): &ShoeOrder {
-        let order = object::borrow<ShoeOrder, ID>(order_id);
-        order
+    // =================== Helper Functions ===================
+
+    // return the publisher
+    fun get_publisher(shared: &ShoePublisher) : &Publisher {
+        &shared.publisher
+     }
+
+    #[test_only]
+    // call the init function
+    public fun test_init(ctx: &mut TxContext) {
+        init(STORE {}, ctx);
     }
 }
